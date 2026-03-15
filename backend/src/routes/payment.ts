@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import * as paystack from '../services/paystack';
 import * as mikrotik from '../services/mikrotik';
 import { generateCredentials } from '../services/credentials';
@@ -29,8 +30,14 @@ router.post('/charge', async (req: Request, res: Response) => {
     });
 
     res.json(result);
-  } catch (err) {
-    console.error('Charge error:', (err as Error).message);
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error('Charge error:', err.response?.status, JSON.stringify(err.response?.data), err.message, err.code);
+    } else if (err instanceof Error) {
+      console.error('Charge error:', err.message, err.stack);
+    } else {
+      console.error('Charge error (raw):', JSON.stringify(err), typeof err);
+    }
     res.status(500).json({ error: 'Payment initiation failed' });
   }
 });

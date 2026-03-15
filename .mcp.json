@@ -6,6 +6,12 @@
       "headers": {
         "x-ref-api-key": "ref-e71029cbf81570613090"
       }
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "@playwright/mcp@latest"],
+      "env": {}
     }
   }
 }

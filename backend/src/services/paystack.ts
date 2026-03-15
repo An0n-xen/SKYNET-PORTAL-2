@@ -24,7 +24,7 @@ interface ChargeResult {
 }
 
 export async function charge({ amount, phone, provider }: ChargeParams): Promise<ChargeResult> {
-  const email = `${Date.now()}@skynet.local`;
+  const email = `user${Date.now()}@skynet-wifi.com`;
 
   const { data } = await api.post('/charge', {
     email,

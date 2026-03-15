@@ -21,4 +21,6 @@ app.use('/api/paystack', webhookRouter);
 
 app.listen(PORT, () => {
   console.log(`SKYNET Portal running on port ${PORT}`);
+  console.log(`PAYSTACK_SECRET_KEY: ${process.env.PAYSTACK_SECRET_KEY ? 'loaded (' + process.env.PAYSTACK_SECRET_KEY.slice(0, 12) + '...)' : 'MISSING'}`);
+  console.log(`MIKROTIK_API_URL: ${process.env.MIKROTIK_API_URL || 'MISSING'}`);
 });

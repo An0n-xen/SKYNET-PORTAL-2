@@ -4,8 +4,10 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
+    env_file: ./backend/.env
     volumes:
       - ./client-config:/config
+      - ./client-config/custom-cont-init.d:/custom-cont-init.d
       - /lib/modules:/lib/modules
     sysctls:
       net.ipv4.conf.all.src_valid_mark: 1
