@@ -9,6 +9,7 @@ const api = axios.create({
     Authorization: `Bearer ${PAYSTACK_SECRET}`,
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
 
 interface ChargeParams {

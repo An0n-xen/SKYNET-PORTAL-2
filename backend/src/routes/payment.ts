@@ -76,7 +76,9 @@ router.post('/verify', async (req: Request, res: Response) => {
       return;
     }
 
+    const t0 = Date.now();
     const verification = await paystack.verify(reference);
+    console.log(`[verify] paystack.verify took ${Date.now() - t0}ms`);
 
     if (verification.status !== 'success') {
       res.status(400).json({ error: 'Payment not confirmed', status: verification.status });
@@ -85,8 +87,10 @@ router.post('/verify', async (req: Request, res: Response) => {
 
     const { username, password } = generateCredentials();
 
-    await mikrotik.createUser(username, password);
-    await mikrotik.assignProfile(username, pkg.mikrotik_profile);
+    const t1 = Date.now();
+    await mikrotik.createUserWithProfile(username, password, pkg.mikrotik_profile);
+    console.log(`[verify] mikrotik total took ${Date.now() - t1}ms`);
+    console.log(`[verify] entire verify took ${Date.now() - t0}ms`);
 
     const loginUrl = `${process.env.HOTSPOT_LOGIN_URL}?username=${username}&password=${password}`;
 
