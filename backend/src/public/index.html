@@ -4,148 +4,448 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SKYNET WiFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --accent: #3b82f6;
+      --accent-soft: #3b82f618;
+      --accent-hover: #2563eb;
+      --red: #e53935;
+      --green: #43a047;
+      --bg: #09090b;
+      --bg-card: #18181b;
+      --bg-input: #09090b;
+      --bg-elevated: #1c1c1f;
+      --border: #27272a;
+      --border-hover: #3f3f46;
+      --text: #a1a1aa;
+      --text-muted: #71717a;
+      --text-bright: #fafafa;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a1a;
-      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
+
+    /* Subtle gradient background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, #1e3a5f10 0%, transparent 60%);
+      pointer-events: none;
+    }
+
     .container {
       width: 100%;
       max-width: 400px;
-      padding: 20px;
+      padding: 32px 20px 24px;
+      position: relative;
+      z-index: 1;
+      animation: fadeIn 0.4s ease-out;
     }
-    h1 {
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ── */
+    .header {
       text-align: center;
-      font-size: 1.8rem;
-      margin-bottom: 8px;
-      color: #00d4ff;
+      margin-bottom: 32px;
     }
-    .subtitle {
-      text-align: center;
-      color: #888;
-      margin-bottom: 24px;
-      font-size: 0.9rem;
+
+    .logo-mark {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 14px;
     }
+
+    .logo-mark svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .brand {
+      font-family: 'Audiowide', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      color: var(--text-bright);
+      margin-bottom: 6px;
+    }
+
+    .tagline {
+      font-size: 0.8rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Section Headings ── */
+    .section-heading {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* ── Package Cards ── */
     .packages {
       display: flex;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 28px;
     }
+
     .package-card {
       flex: 1;
-      background: #1a1a2e;
-      border: 2px solid #333;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px;
+      padding: 20px 14px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
     }
+
+    .package-card:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-elevated);
+    }
+
     .package-card.selected {
-      border-color: #00d4ff;
+      border-color: var(--accent);
+      background: var(--bg-elevated);
     }
-    .package-card h3 { font-size: 1rem; margin-bottom: 4px; }
-    .package-card .price { font-size: 1.4rem; font-weight: bold; color: #00d4ff; }
-    .package-card .validity { font-size: 0.8rem; color: #888; margin-top: 4px; }
+
+    .package-card.selected::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .package-card h3 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .package-card.selected h3 {
+      color: var(--text);
+    }
+
+    .package-card .price {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 6px;
+    }
+
+    .package-card .validity {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* ── Form ── */
     .form-group {
       margin-bottom: 16px;
     }
+
     label {
       display: block;
-      font-size: 0.85rem;
-      color: #aaa;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--text-muted);
       margin-bottom: 6px;
     }
+
     input, select {
       width: 100%;
-      padding: 12px;
-      background: #1a1a2e;
-      border: 1px solid #333;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 1rem;
+      padding: 12px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-bright);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 400;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
     }
+
+    input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
     input:focus, select:focus {
       outline: none;
-      border-color: #00d4ff;
+      border-color: var(--accent);
     }
-    button {
-      width: 100%;
-      padding: 14px;
-      background: #00d4ff;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
+
+    select {
       cursor: pointer;
-      transition: opacity 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2371717a' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
     }
-    button:disabled {
-      opacity: 0.5;
+
+    select option {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
       cursor: not-allowed;
     }
-    .status {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 0.9rem;
-      color: #aaa;
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--border);
+      margin-top: 10px;
     }
-    .status.error { color: #ff4444; }
-    .otp-section { display: none; }
-    .otp-section.visible { display: block; }
+
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* ── Status ── */
+    .status-area {
+      margin-top: 20px;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .status {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .status.error {
+      color: var(--red);
+    }
+
+    .status.success {
+      color: var(--green);
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: none;
+      justify-content: center;
+      padding: 12px 0;
+    }
+
+    .spinner.visible {
+      display: flex;
+    }
+
+    .spinner-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin: 0 4px;
+      opacity: 0.3;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .spinner-dot:nth-child(2) { animation-delay: 0.2s; }
+    .spinner-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    /* ── OTP Section ── */
+    .otp-section {
+      display: none;
+    }
+
+    .otp-section.visible {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    /* ── Verify Section ── */
+    .verify-section {
+      display: none;
+    }
+
+    .verify-section.visible {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 28px;
+    }
+
+    .footer-text {
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      opacity: 0.5;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 440px) {
+      .container { padding: 24px 16px 20px; }
+      .brand { font-size: 1.2rem; }
+      .package-card .price { font-size: 1rem; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>SKYNET WiFi</h1>
-    <p class="subtitle">Select a package and pay to get connected</p>
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-mark">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="44" r="3.5" fill="#3b82f6"/>
+          <path d="M23 37a13 13 0 0 1 18 0" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path d="M16 30a22 22 0 0 1 32 0" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.55"/>
+          <path d="M9 23a30 30 0 0 1 46 0" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.25"/>
+        </svg>
+      </div>
+      <div class="brand">SKYNET</div>
+      <p class="tagline">High-speed wireless internet</p>
+    </div>
 
+    <!-- Packages -->
+    <div class="section-heading">Select a plan</div>
     <div class="packages" id="packages"></div>
 
+    <!-- Payment Form -->
     <div id="payment-form">
+      <div class="section-heading">Payment</div>
+
       <div class="form-group">
-        <label for="phone">Mobile Money Number</label>
-        <input type="tel" id="phone" placeholder="0241234567">
+        <label for="phone">Mobile money number</label>
+        <input type="tel" id="phone" placeholder="024 123 4567">
       </div>
 
       <div class="form-group">
         <label for="provider">Network</label>
         <select id="provider">
-          <option value="mtn">MTN</option>
-          <option value="vod">Vodafone</option>
-          <option value="tgo">AirtelTigo</option>
+          <option value="mtn">MTN Mobile Money</option>
+          <option value="vod">Vodafone Cash</option>
+          <option value="tgo">AirtelTigo Money</option>
         </select>
       </div>
 
-      <button id="pay-btn" disabled>Pay Now</button>
+      <button class="btn btn-primary" id="pay-btn" disabled>Pay Now</button>
     </div>
 
+    <!-- OTP Section -->
     <div class="otp-section" id="otp-section">
+      <div class="divider"></div>
+      <div class="section-heading">Enter verification code</div>
       <div class="form-group">
-        <label for="otp">Enter OTP</label>
-        <input type="text" id="otp" placeholder="123456" maxlength="6">
+        <label for="otp">OTP</label>
+        <input type="text" id="otp" placeholder="------" maxlength="6" style="text-align:center; letter-spacing:0.3em;">
       </div>
-      <button id="otp-btn">Submit OTP</button>
+      <button class="btn btn-primary" id="otp-btn">Submit OTP</button>
     </div>
 
-    <p class="status" id="status"></p>
+    <!-- Verify Button -->
+    <div class="verify-section" id="verify-section">
+      <button class="btn btn-outline" id="verify-btn">Verify Payment</button>
+    </div>
+
+    <!-- Spinner -->
+    <div class="spinner" id="spinner">
+      <div class="spinner-dot"></div>
+      <div class="spinner-dot"></div>
+      <div class="spinner-dot"></div>
+    </div>
+
+    <!-- Status -->
+    <div class="status-area">
+      <p class="status" id="status"></p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-text">SKYNET Wireless Systems</div>
+    </div>
   </div>
 
   <script>
     let selectedPackage = null;
     let paymentReference = null;
+    let pollInterval = null;
 
     const packagesEl = document.getElementById('packages');
     const payBtn = document.getElementById('pay-btn');
     const otpSection = document.getElementById('otp-section');
     const otpBtn = document.getElementById('otp-btn');
+    const verifySection = document.getElementById('verify-section');
+    const verifyBtn = document.getElementById('verify-btn');
+    const spinnerEl = document.getElementById('spinner');
     const statusEl = document.getElementById('status');
 
     // Load packages
@@ -169,6 +469,18 @@
           packagesEl.appendChild(card);
         });
       });
+
+    function showVerifyButton() {
+      verifySection.classList.add('visible');
+    }
+
+    function showSpinner() {
+      spinnerEl.classList.add('visible');
+    }
+
+    function hideSpinner() {
+      spinnerEl.classList.remove('visible');
+    }
 
     // Pay
     payBtn.addEventListener('click', async () => {
@@ -196,10 +508,13 @@
         if (data.status === 'send_otp') {
           statusEl.textContent = data.display_text || 'Enter the OTP sent to your phone';
           otpSection.classList.add('visible');
+          showVerifyButton();
         } else if (data.status === 'pay_offline') {
           statusEl.textContent = data.display_text || 'Approve the payment on your phone...';
+          showVerifyButton();
           pollVerify();
         } else if (data.status === 'success') {
+          showVerifyButton();
           await verifyAndLogin();
         }
       } catch (err) {
@@ -240,9 +555,17 @@
       }
     });
 
+    // Manual verify button
+    verifyBtn.addEventListener('click', async () => {
+      if (!paymentReference) return;
+      verifyBtn.disabled = true;
+      await verifyAndLogin();
+      verifyBtn.disabled = false;
+    });
+
     // Poll for offline payment confirmation
     function pollVerify() {
-      const interval = setInterval(async () => {
+      pollInterval = setInterval(async () => {
         try {
           const res = await fetch('/api/payment/verify', {
             method: 'POST',
@@ -252,8 +575,11 @@
           const data = await res.json();
 
           if (data.success && data.loginUrl) {
-            clearInterval(interval);
+            clearInterval(pollInterval);
+            showSpinner();
             statusEl.textContent = 'Payment confirmed! Connecting you...';
+            statusEl.className = 'status success';
+            verifySection.classList.remove('visible');
             window.location.href = data.loginUrl;
           }
         } catch (_) {
@@ -264,20 +590,31 @@
 
     // Verify and redirect
     async function verifyAndLogin() {
-      statusEl.textContent = 'Payment confirmed! Setting up your connection...';
+      showSpinner();
+      statusEl.textContent = 'Setting up your connection...';
+      statusEl.className = 'status';
 
-      const res = await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference: paymentReference, package: selectedPackage }),
-      });
-      const data = await res.json();
+      try {
+        const res = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference: paymentReference, package: selectedPackage }),
+        });
+        const data = await res.json();
 
-      if (data.success && data.loginUrl) {
-        statusEl.textContent = 'Connected! Redirecting...';
-        window.location.href = data.loginUrl;
-      } else {
-        statusEl.textContent = data.error || 'Verification failed';
+        if (data.success && data.loginUrl) {
+          statusEl.textContent = 'Connected! Redirecting...';
+          statusEl.className = 'status success';
+          verifySection.classList.remove('visible');
+          window.location.href = data.loginUrl;
+        } else {
+          hideSpinner();
+          statusEl.textContent = data.error || 'Verification failed — tap Verify Payment to retry';
+          statusEl.className = 'status error';
+        }
+      } catch (err) {
+        hideSpinner();
+        statusEl.textContent = 'Connection error — tap Verify Payment to retry';
         statusEl.className = 'status error';
       }
     }
