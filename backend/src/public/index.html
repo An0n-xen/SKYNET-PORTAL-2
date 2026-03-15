@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKYNET WiFi</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      color: #00d4ff;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+    .packages {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .package-card {
+      flex: 1;
+      background: #1a1a2e;
+      border: 2px solid #333;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .package-card.selected {
+      border-color: #00d4ff;
+    }
+    .package-card h3 { font-size: 1rem; margin-bottom: 4px; }
+    .package-card .price { font-size: 1.4rem; font-weight: bold; color: #00d4ff; }
+    .package-card .validity { font-size: 0.8rem; color: #888; margin-top: 4px; }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #00d4ff;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #00d4ff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .status {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    .status.error { color: #ff4444; }
+    .otp-section { display: none; }
+    .otp-section.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SKYNET WiFi</h1>
+    <p class="subtitle">Select a package and pay to get connected</p>
+
+    <div class="packages" id="packages"></div>
+
+    <div id="payment-form">
+      <div class="form-group">
+        <label for="phone">Mobile Money Number</label>
+        <input type="tel" id="phone" placeholder="0241234567">
+      </div>
+
+      <div class="form-group">
+        <label for="provider">Network</label>
+        <select id="provider">
+          <option value="mtn">MTN</option>
+          <option value="vod">Vodafone</option>
+          <option value="tgo">AirtelTigo</option>
+        </select>
+      </div>
+
+      <button id="pay-btn" disabled>Pay Now</button>
+    </div>
+
+    <div class="otp-section" id="otp-section">
+      <div class="form-group">
+        <label for="otp">Enter OTP</label>
+        <input type="text" id="otp" placeholder="123456" maxlength="6">
+      </div>
+      <button id="otp-btn">Submit OTP</button>
+    </div>
+
+    <p class="status" id="status"></p>
+  </div>
+
+  <script>
+    let selectedPackage = null;
+    let paymentReference = null;
+
+    const packagesEl = document.getElementById('packages');
+    const payBtn = document.getElementById('pay-btn');
+    const otpSection = document.getElementById('otp-section');
+    const otpBtn = document.getElementById('otp-btn');
+    const statusEl = document.getElementById('status');
+
+    // Load packages
+    fetch('/api/packages')
+      .then(r => r.json())
+      .then(pkgs => {
+        Object.entries(pkgs).forEach(([key, pkg]) => {
+          const card = document.createElement('div');
+          card.className = 'package-card';
+          card.innerHTML = `
+            <h3>${pkg.name}</h3>
+            <div class="price">${pkg.display_price}</div>
+            <div class="validity">${pkg.validity}</div>
+          `;
+          card.addEventListener('click', () => {
+            document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedPackage = key;
+            payBtn.disabled = false;
+          });
+          packagesEl.appendChild(card);
+        });
+      });
+
+    // Pay
+    payBtn.addEventListener('click', async () => {
+      const phone = document.getElementById('phone').value.trim();
+      const provider = document.getElementById('provider').value;
+
+      if (!phone || !selectedPackage) return;
+
+      payBtn.disabled = true;
+      statusEl.textContent = 'Initiating payment...';
+      statusEl.className = 'status';
+
+      try {
+        const res = await fetch('/api/payment/charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ package: selectedPackage, phone, provider }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        paymentReference = data.reference;
+
+        if (data.status === 'send_otp') {
+          statusEl.textContent = data.display_text || 'Enter the OTP sent to your phone';
+          otpSection.classList.add('visible');
+        } else if (data.status === 'pay_offline') {
+          statusEl.textContent = data.display_text || 'Approve the payment on your phone...';
+          pollVerify();
+        } else if (data.status === 'success') {
+          await verifyAndLogin();
+        }
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = 'status error';
+        payBtn.disabled = false;
+      }
+    });
+
+    // Submit OTP
+    otpBtn.addEventListener('click', async () => {
+      const otp = document.getElementById('otp').value.trim();
+      if (!otp || !paymentReference) return;
+
+      otpBtn.disabled = true;
+      statusEl.textContent = 'Verifying OTP...';
+
+      try {
+        const res = await fetch('/api/payment/submit-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ otp, reference: paymentReference }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        if (data.status === 'success') {
+          await verifyAndLogin();
+        } else if (data.status === 'pay_offline') {
+          statusEl.textContent = data.display_text || 'Approve the payment on your phone...';
+          pollVerify();
+        }
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = 'status error';
+        otpBtn.disabled = false;
+      }
+    });
+
+    // Poll for offline payment confirmation
+    function pollVerify() {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reference: paymentReference, package: selectedPackage }),
+          });
+          const data = await res.json();
+
+          if (data.success && data.loginUrl) {
+            clearInterval(interval);
+            statusEl.textContent = 'Payment confirmed! Connecting you...';
+            window.location.href = data.loginUrl;
+          }
+        } catch (_) {
+          // keep polling
+        }
+      }, 5000);
+    }
+
+    // Verify and redirect
+    async function verifyAndLogin() {
+      statusEl.textContent = 'Payment confirmed! Setting up your connection...';
+
+      const res = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: paymentReference, package: selectedPackage }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.loginUrl) {
+        statusEl.textContent = 'Connected! Redirecting...';
+        window.location.href = data.loginUrl;
+      } else {
+        statusEl.textContent = data.error || 'Verification failed';
+        statusEl.className = 'status error';
+      }
+    }
+  </script>
+</body>
+</html>

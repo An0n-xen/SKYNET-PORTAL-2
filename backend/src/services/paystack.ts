@@ -1,0 +1,72 @@
+import axios from 'axios';
+
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!;
+const BASE_URL = 'https://api.paystack.co';
+
+const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    Authorization: `Bearer ${PAYSTACK_SECRET}`,
+    'Content-Type': 'application/json',
+  },
+});
+
+interface ChargeParams {
+  amount: number;
+  phone: string;
+  provider: 'mtn' | 'vod' | 'tgo';
+}
+
+interface ChargeResult {
+  status: string;
+  reference: string;
+  display_text?: string;
+}
+
+export async function charge({ amount, phone, provider }: ChargeParams): Promise<ChargeResult> {
+  const email = `${Date.now()}@skynet.local`;
+
+  const { data } = await api.post('/charge', {
+    email,
+    amount,
+    currency: 'GHS',
+    mobile_money: { phone, provider },
+  });
+
+  return {
+    status: data.data.status,
+    reference: data.data.reference,
+    display_text: data.data.display_text,
+  };
+}
+
+interface SubmitOtpParams {
+  otp: string;
+  reference: string;
+}
+
+export async function submitOtp({ otp, reference }: SubmitOtpParams): Promise<ChargeResult> {
+  const { data } = await api.post('/charge/submit_otp', { otp, reference });
+
+  return {
+    status: data.data.status,
+    reference: data.data.reference,
+    display_text: data.data.display_text,
+  };
+}
+
+interface VerifyResult {
+  status: string;
+  amount: number;
+  reference: string;
+}
+
+export async function verify(reference: string): Promise<VerifyResult> {
+  const { data } = await api.get(`/transaction/verify/${reference}`);
+
+  return {
+    status: data.data.status,
+    amount: data.data.amount,
+    reference: data.data.reference,
+  };
+}
