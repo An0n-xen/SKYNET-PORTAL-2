@@ -8,6 +8,19 @@ SKYNET-PORTAL-2 is a **paid WiFi hotspot system**. Users connect to a TP-Link AP
 
 **Stack:** Node.js + Express + **TypeScript** (serves both captive portal UI and API), Axios, **pnpm** package manager, plain HTML/CSS/JS frontend. No separate frontend framework.
 
+## Frontend Design
+
+The captive portal (`backend/src/public/index.html`) uses an **Obsidian Blue** theme with light/dark mode support via `prefers-color-scheme`.
+
+- **Dark palette:** zinc blacks (`#09090b` bg, `#18181b` cards), `#3b82f6` blue accent
+- **Light palette:** zinc whites (`#f4f4f5` bg, `#ffffff` cards), `#2563eb` blue accent
+- **Brand font:** Audiowide (400) — used only for "SKYNET" text
+- **Body font:** Outfit (300–700) — everything else
+- **Icon:** WiFi SVG arcs in blue (`#3b82f6`)
+- **Desktop:** scaled-up sizing (larger logo, fonts, inputs, buttons)
+- **Mobile (≤480px):** compact sizing via media query
+- **Button text:** white (`#ffffff`) on blue accent background
+
 ## System Architecture
 
 ```
