@@ -26,6 +26,7 @@
         --text: #a1a1aa;
         --text-muted: #71717a;
         --text-bright: #fafafa;
+        --selected-card-bg: #1e293b;
       }
 
       @media (prefers-color-scheme: light) {
@@ -42,6 +43,7 @@
           --text: #52525b;
           --text-muted: #71717a;
           --text-bright: #18181b;
+          --selected-card-bg: #dbeafe;
         }
       }
 
@@ -163,20 +165,15 @@
         background: var(--bg-elevated);
       }
 
-      .package-card.selected {
-        border-color: var(--accent);
-        background: var(--bg-elevated);
+      .package-card.selected,
+      .package-card.selected:hover {
+        border: 2px solid var(--accent);
+        background: var(--selected-card-bg);
+        padding: 23px 15px;
       }
 
-      .package-card.selected::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--accent);
-        border-radius: 14px 14px 0 0;
+      .package-card.selected h3 {
+        color: var(--accent);
       }
 
       .package-card h3 {
@@ -187,7 +184,7 @@
         margin-bottom: 10px;
       }
 
-      .package-card.selected h3 {
+      .package-card.selected .validity {
         color: var(--text);
       }
 
@@ -415,10 +412,6 @@
 
         .btn-primary {
           color: #ffffff;
-        }
-
-        .package-card.selected::after {
-          opacity: 0.8;
         }
 
         select {
