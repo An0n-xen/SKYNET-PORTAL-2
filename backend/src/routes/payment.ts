@@ -7,6 +7,9 @@ import { packages } from './packages';
 
 const router = Router();
 
+// Guard against duplicate user creation per payment reference
+const processedReferences = new Map<string, string>();
+
 // POST /api/payment/charge
 router.post('/charge', async (req: Request, res: Response) => {
   try {
@@ -85,6 +88,14 @@ router.post('/verify', async (req: Request, res: Response) => {
       return;
     }
 
+    // Return cached result if this reference was already processed (prevents duplicate users)
+    const cachedUrl = processedReferences.get(reference);
+    if (cachedUrl) {
+      console.log(`[verify] reference ${reference} already processed, returning cached loginUrl`);
+      res.json({ success: true, loginUrl: cachedUrl });
+      return;
+    }
+
     const { username, password } = generateCredentials();
 
     const t1 = Date.now();
@@ -93,6 +104,9 @@ router.post('/verify', async (req: Request, res: Response) => {
     console.log(`[verify] entire verify took ${Date.now() - t0}ms`);
 
     const loginUrl = `${process.env.HOTSPOT_LOGIN_URL}?username=${username}&password=${password}`;
+
+    // Cache the result so duplicate calls don't create another user
+    processedReferences.set(reference, loginUrl);
 
     res.json({ success: true, loginUrl });
   } catch (err) {

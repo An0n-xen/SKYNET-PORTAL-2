@@ -1,7 +1,10 @@
 import axios from 'axios';
+import https from 'https';
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!;
 const BASE_URL = 'https://api.paystack.co';
+
+const keepAliveAgent = new https.Agent({ keepAlive: true });
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -10,6 +13,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 15000,
+  httpsAgent: keepAliveAgent,
 });
 
 interface ChargeParams {

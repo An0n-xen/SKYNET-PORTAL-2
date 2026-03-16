@@ -400,6 +400,72 @@
         letter-spacing: 0.04em;
       }
 
+      /* ── Modal ── */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        animation: fadeIn 0.2s ease-out;
+      }
+
+      .modal-overlay.visible {
+        display: flex;
+      }
+
+      .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px 24px;
+        max-width: 360px;
+        width: 100%;
+        text-align: center;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .modal-icon {
+        font-size: 2.5rem;
+        margin-bottom: 16px;
+      }
+
+      .modal-title {
+        font-family: "Outfit", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-bright);
+        margin-bottom: 10px;
+      }
+
+      .modal-text {
+        font-size: 0.88rem;
+        color: var(--text);
+        line-height: 1.6;
+        margin-bottom: 24px;
+      }
+
+      .modal-btn {
+        width: 100%;
+        padding: 13px;
+        border: none;
+        border-radius: 12px;
+        font-family: "Outfit", sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        background: var(--accent);
+        color: #ffffff;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .modal-btn:hover {
+        background: var(--accent-hover);
+      }
+
       /* ── Light mode overrides ── */
       @media (prefers-color-scheme: light) {
         body::before {
@@ -459,6 +525,10 @@
         .package-card {
           border-radius: 12px;
           padding: 20px 14px;
+        }
+        .package-card.selected,
+        .package-card.selected:hover {
+          padding: 19px 13px;
         }
         .package-card h3 {
           font-size: 0.75rem;
@@ -621,10 +691,25 @@
       </div>
     </div>
 
+    <!-- Payment Approval Modal -->
+    <div class="modal-overlay" id="approval-modal">
+      <div class="modal-content">
+        <div class="modal-icon">📱</div>
+        <div class="modal-title">Check your phone</div>
+        <p class="modal-text" id="modal-text">
+          A payment prompt has been sent to your phone. Please approve it to continue.
+          <br /><br />
+          If no prompt appears, open your mobile money app and check your approvals.
+        </p>
+        <button class="modal-btn" id="modal-ok-btn">OK, I'll check</button>
+      </div>
+    </div>
+
     <script>
       let selectedPackage = null;
       let paymentReference = null;
       let pollInterval = null;
+      let verifying = false;
 
       const packagesEl = document.getElementById("packages");
       const payBtn = document.getElementById("pay-btn");
@@ -634,6 +719,9 @@
       const verifyBtn = document.getElementById("verify-btn");
       const spinnerEl = document.getElementById("spinner");
       const statusEl = document.getElementById("status");
+      const approvalModal = document.getElementById("approval-modal");
+      const modalText = document.getElementById("modal-text");
+      const modalOkBtn = document.getElementById("modal-ok-btn");
 
       // Load packages
       fetch("/api/packages")
@@ -659,6 +747,8 @@
           });
         });
 
+      const providerNames = { mtn: "MTN Mobile Money", vod: "Vodafone Cash", tgo: "AirtelTigo Money" };
+
       function showVerifyButton() {
         verifySection.classList.add("visible");
       }
@@ -671,6 +761,18 @@
         spinnerEl.classList.remove("visible");
       }
 
+      function showApprovalModal(provider) {
+        const name = providerNames[provider] || "your mobile money app";
+        modalText.innerHTML =
+          `A payment prompt has been sent to your phone via <strong>${name}</strong>. Please approve it to continue.` +
+          `<br><br>If no prompt appears, open your mobile money app and check your pending approvals.`;
+        approvalModal.classList.add("visible");
+      }
+
+      modalOkBtn.addEventListener("click", () => {
+        approvalModal.classList.remove("visible");
+      });
+
       // Pay
       payBtn.addEventListener("click", async () => {
         const phone = document.getElementById("phone").value.trim();
@@ -679,8 +781,12 @@
         if (!phone || !selectedPackage) return;
 
         payBtn.disabled = true;
+        showSpinner();
         statusEl.textContent = "Initiating payment...";
         statusEl.className = "status";
+
+        // Show approval modal immediately so user knows to check their phone
+        showApprovalModal(provider);
 
         try {
           const res = await fetch("/api/payment/charge", {
@@ -695,11 +801,13 @@
           paymentReference = data.reference;
 
           if (data.status === "send_otp") {
+            hideSpinner();
             statusEl.textContent =
               data.display_text || "Enter the OTP sent to your phone";
             otpSection.classList.add("visible");
             showVerifyButton();
           } else if (data.status === "pay_offline") {
+            hideSpinner();
             statusEl.textContent =
               data.display_text || "Approve the payment on your phone...";
             showVerifyButton();
@@ -709,6 +817,8 @@
             await verifyAndLogin();
           }
         } catch (err) {
+          hideSpinner();
+          approvalModal.classList.remove("visible");
           statusEl.textContent = err.message;
           statusEl.className = "status error";
           payBtn.disabled = false;
@@ -721,6 +831,7 @@
         if (!otp || !paymentReference) return;
 
         otpBtn.disabled = true;
+        showSpinner();
         statusEl.textContent = "Verifying OTP...";
 
         try {
@@ -730,6 +841,7 @@
             body: JSON.stringify({ otp, reference: paymentReference }),
           });
           const data = await res.json();
+          hideSpinner();
 
           if (!res.ok) throw new Error(data.error);
 
@@ -741,15 +853,20 @@
             pollVerify();
           }
         } catch (err) {
+          hideSpinner();
           statusEl.textContent = err.message;
           statusEl.className = "status error";
           otpBtn.disabled = false;
         }
       });
 
-      // Manual verify button
+      // Manual verify button — stops polling first, then verifies
       verifyBtn.addEventListener("click", async () => {
-        if (!paymentReference) return;
+        if (!paymentReference || verifying) return;
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
         verifyBtn.disabled = true;
         await verifyAndLogin();
         verifyBtn.disabled = false;
@@ -758,6 +875,7 @@
       // Poll for offline payment confirmation
       function pollVerify() {
         pollInterval = setInterval(async () => {
+          if (verifying) return; // skip tick if a verify is already in progress
           try {
             const res = await fetch("/api/payment/verify", {
               method: "POST",
@@ -771,6 +889,7 @@
 
             if (data.success && data.loginUrl) {
               clearInterval(pollInterval);
+              pollInterval = null;
               showSpinner();
               statusEl.textContent = "Payment confirmed! Connecting you...";
               statusEl.className = "status success";
@@ -783,8 +902,28 @@
         }, 5000);
       }
 
+      // Reset UI when page is restored from bfcache (user navigated back)
+      window.addEventListener("pageshow", (e) => {
+        if (e.persisted) {
+          hideSpinner();
+          approvalModal.classList.remove("visible");
+          otpSection.classList.remove("visible");
+          verifySection.classList.remove("visible");
+          statusEl.textContent = "";
+          statusEl.className = "status";
+          payBtn.disabled = !selectedPackage;
+          verifying = false;
+          if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        }
+      });
+
       // Verify and redirect
       async function verifyAndLogin() {
+        if (verifying) return;
+        verifying = true;
         showSpinner();
         statusEl.textContent = "Setting up your connection...";
         statusEl.className = "status";
@@ -801,6 +940,10 @@
           const data = await res.json();
 
           if (data.success && data.loginUrl) {
+            if (pollInterval) {
+              clearInterval(pollInterval);
+              pollInterval = null;
+            }
             statusEl.textContent = "Connected! Redirecting...";
             statusEl.className = "status success";
             verifySection.classList.remove("visible");
@@ -808,14 +951,16 @@
           } else {
             hideSpinner();
             statusEl.textContent =
-              data.error || "Verification failed — tap Verify Payment to retry";
+              data.error || "Verification failed — please try again";
             statusEl.className = "status error";
           }
         } catch (err) {
           hideSpinner();
           statusEl.textContent =
-            "Connection error — tap Verify Payment to retry";
+            "Connection error — please try again";
           statusEl.className = "status error";
+        } finally {
+          verifying = false;
         }
       }
     </script>
