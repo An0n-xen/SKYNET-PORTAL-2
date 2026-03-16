@@ -386,6 +386,105 @@
         margin: 20px 0;
       }
 
+      /* ── Success Screen ── */
+      .success-screen {
+        display: none;
+      }
+
+      .success-screen.visible {
+        display: block;
+        animation: fadeIn 0.4s ease-out;
+      }
+
+      .success-icon {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 16px;
+      }
+
+      .success-title {
+        text-align: center;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--green);
+        margin-bottom: 6px;
+      }
+
+      .success-subtitle {
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+      }
+
+      .credential-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+
+      .credential-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        letter-spacing: 0.03em;
+      }
+
+      .credential-value {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-bright);
+        font-family: "Outfit", monospace;
+        letter-spacing: 0.08em;
+      }
+
+      .copy-btn {
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-family: "Outfit", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--accent);
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+      }
+
+      .copy-btn:hover {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .copy-btn.copied {
+        color: var(--green);
+        border-color: var(--green);
+      }
+
+      .sms-notice {
+        text-align: center;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin: 16px 0;
+        line-height: 1.5;
+      }
+
+      .countdown-text {
+        text-align: center;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin-top: 20px;
+      }
+
+      .countdown-text strong {
+        color: var(--accent);
+      }
+
       /* ── Footer ── */
       .footer {
         text-align: center;
@@ -576,6 +675,27 @@
         .footer-text {
           font-size: 0.65rem;
         }
+        .success-icon {
+          font-size: 2rem;
+        }
+        .success-title {
+          font-size: 1rem;
+        }
+        .success-subtitle {
+          font-size: 0.78rem;
+        }
+        .credential-row {
+          padding: 10px 12px;
+        }
+        .credential-value {
+          font-size: 0.95rem;
+        }
+        .sms-notice {
+          font-size: 0.75rem;
+        }
+        .countdown-text {
+          font-size: 0.75rem;
+        }
       }
     </style>
   </head>
@@ -685,6 +805,35 @@
         <p class="status" id="status"></p>
       </div>
 
+      <!-- Success Screen -->
+      <div class="success-screen" id="success-screen">
+        <div class="success-icon">&#9989;</div>
+        <div class="success-title">Payment Successful!</div>
+        <div class="success-subtitle" id="success-plan"></div>
+
+        <div class="credential-row">
+          <div>
+            <div class="credential-label">Username</div>
+            <div class="credential-value" id="cred-username"></div>
+          </div>
+          <button class="copy-btn" onclick="copyCredential('cred-username', this)">Copy</button>
+        </div>
+
+        <div class="credential-row">
+          <div>
+            <div class="credential-label">Password</div>
+            <div class="credential-value" id="cred-password"></div>
+          </div>
+          <button class="copy-btn" onclick="copyCredential('cred-password', this)">Copy</button>
+        </div>
+
+        <div class="sms-notice" id="sms-notice"></div>
+
+        <button class="btn btn-primary" id="connect-now-btn">Connect Now</button>
+
+        <div class="countdown-text" id="countdown-text"></div>
+      </div>
+
       <!-- Footer -->
       <div class="footer">
         <div class="footer-text">SKYNET Wireless Systems</div>
@@ -708,6 +857,7 @@
     <script>
       let selectedPackage = null;
       let paymentReference = null;
+      let paymentPhone = null;
       let pollInterval = null;
       let verifying = false;
 
@@ -780,6 +930,7 @@
 
         if (!phone || !selectedPackage) return;
 
+        paymentPhone = phone;
         payBtn.disabled = true;
         showSpinner();
         statusEl.textContent = "Initiating payment...";
@@ -883,6 +1034,7 @@
               body: JSON.stringify({
                 reference: paymentReference,
                 package: selectedPackage,
+                phone: paymentPhone,
               }),
             });
             const data = await res.json();
@@ -890,11 +1042,9 @@
             if (data.success && data.loginUrl) {
               clearInterval(pollInterval);
               pollInterval = null;
-              showSpinner();
-              statusEl.textContent = "Payment confirmed! Connecting you...";
-              statusEl.className = "status success";
+              hideSpinner();
               verifySection.classList.remove("visible");
-              window.location.href = data.loginUrl;
+              showSuccessScreen(data);
             }
           } catch (_) {
             // keep polling
@@ -909,6 +1059,10 @@
           approvalModal.classList.remove("visible");
           otpSection.classList.remove("visible");
           verifySection.classList.remove("visible");
+          document.getElementById("success-screen").classList.remove("visible");
+          document.getElementById("payment-form").style.display = "";
+          document.getElementById("packages").style.display = "";
+          document.querySelector(".section-heading").style.display = "";
           statusEl.textContent = "";
           statusEl.className = "status";
           payBtn.disabled = !selectedPackage;
@@ -920,7 +1074,69 @@
         }
       });
 
-      // Verify and redirect
+      // Copy credential value to clipboard
+      function copyCredential(elId, btn) {
+        const text = document.getElementById(elId).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.textContent = "Copy";
+            btn.classList.remove("copied");
+          }, 2000);
+        });
+      }
+
+      // Show success screen with credentials and countdown
+      function showSuccessScreen(data) {
+        // Hide payment form and other sections
+        document.getElementById("payment-form").style.display = "none";
+        document.getElementById("packages").style.display = "none";
+        document.querySelector(".section-heading").style.display = "none";
+        otpSection.classList.remove("visible");
+        verifySection.classList.remove("visible");
+        statusEl.textContent = "";
+
+        // Populate credentials
+        document.getElementById("cred-username").textContent = data.username;
+        document.getElementById("cred-password").textContent = data.password;
+        document.getElementById("success-plan").textContent = data.packageName + " Plan";
+
+        // SMS notice
+        const smsNotice = document.getElementById("sms-notice");
+        if (paymentPhone) {
+          const masked = paymentPhone.slice(0, 3) + "****" + paymentPhone.slice(-3);
+          smsNotice.textContent = "Credentials sent via SMS to " + masked;
+        } else {
+          smsNotice.textContent = "";
+        }
+
+        // Show success screen
+        const successScreen = document.getElementById("success-screen");
+        successScreen.classList.add("visible");
+
+        // Connect Now button
+        const connectBtn = document.getElementById("connect-now-btn");
+        connectBtn.addEventListener("click", () => {
+          window.location.href = data.loginUrl;
+        });
+
+        // Countdown
+        let seconds = 5;
+        const countdownEl = document.getElementById("countdown-text");
+        countdownEl.innerHTML = "Auto-connecting in <strong>" + seconds + "</strong> seconds...";
+        const countdownTimer = setInterval(() => {
+          seconds--;
+          if (seconds <= 0) {
+            clearInterval(countdownTimer);
+            window.location.href = data.loginUrl;
+          } else {
+            countdownEl.innerHTML = "Auto-connecting in <strong>" + seconds + "</strong> seconds...";
+          }
+        }, 1000);
+      }
+
+      // Verify and show success
       async function verifyAndLogin() {
         if (verifying) return;
         verifying = true;
@@ -935,6 +1151,7 @@
             body: JSON.stringify({
               reference: paymentReference,
               package: selectedPackage,
+              phone: paymentPhone,
             }),
           });
           const data = await res.json();
@@ -944,10 +1161,9 @@
               clearInterval(pollInterval);
               pollInterval = null;
             }
-            statusEl.textContent = "Connected! Redirecting...";
-            statusEl.className = "status success";
+            hideSpinner();
             verifySection.classList.remove("visible");
-            window.location.href = data.loginUrl;
+            showSuccessScreen(data);
           } else {
             hideSpinner();
             statusEl.textContent =

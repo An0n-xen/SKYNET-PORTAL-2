@@ -3,12 +3,27 @@ import axios from 'axios';
 import * as paystack from '../services/paystack';
 import * as mikrotik from '../services/mikrotik';
 import { generateCredentials } from '../services/credentials';
+import { sendCredentialsSms } from '../services/sms';
 import { packages } from './packages';
+import logger from '../logger';
 
 const router = Router();
 
+// Validate and normalize Ghana phone numbers (10 digits starting with 0)
+function validatePhone(phone: string): string | null {
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  if (/^0[235]\d{8}$/.test(cleaned)) return cleaned;
+  return null;
+}
+
 // Guard against duplicate user creation per payment reference
-const processedReferences = new Map<string, string>();
+interface ProcessedResult {
+  loginUrl: string;
+  username: string;
+  password: string;
+  packageName: string;
+}
+const processedReferences = new Map<string, ProcessedResult>();
 
 // POST /api/payment/charge
 router.post('/charge', async (req: Request, res: Response) => {
@@ -20,6 +35,12 @@ router.post('/charge', async (req: Request, res: Response) => {
       return;
     }
 
+    const validPhone = validatePhone(phone);
+    if (!validPhone) {
+      res.status(400).json({ error: 'Enter a valid Ghana phone number (e.g. 024 123 4567)' });
+      return;
+    }
+
     const pkg = packages[pkgKey];
     if (!pkg) {
       res.status(400).json({ error: 'Invalid package' });
@@ -28,18 +49,16 @@ router.post('/charge', async (req: Request, res: Response) => {
 
     const result = await paystack.charge({
       amount: pkg.price,
-      phone,
+      phone: validPhone,
       provider,
     });
 
     res.json(result);
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
-      console.error('Charge error:', err.response?.status, JSON.stringify(err.response?.data), err.message, err.code);
-    } else if (err instanceof Error) {
-      console.error('Charge error:', err.message, err.stack);
+      logger.error({ status: err.response?.status, data: err.response?.data, code: err.code }, 'charge failed');
     } else {
-      console.error('Charge error (raw):', JSON.stringify(err), typeof err);
+      logger.error({ err }, 'charge failed');
     }
     res.status(500).json({ error: 'Payment initiation failed' });
   }
@@ -58,7 +77,7 @@ router.post('/submit-otp', async (req: Request, res: Response) => {
     const result = await paystack.submitOtp({ otp, reference });
     res.json(result);
   } catch (err) {
-    console.error('OTP error:', (err as Error).message);
+    logger.error({ err }, 'OTP submission failed');
     res.status(500).json({ error: 'OTP submission failed' });
   }
 });
@@ -66,7 +85,7 @@ router.post('/submit-otp', async (req: Request, res: Response) => {
 // POST /api/payment/verify
 router.post('/verify', async (req: Request, res: Response) => {
   try {
-    const { reference, package: pkgKey } = req.body;
+    const { reference, package: pkgKey, phone } = req.body;
 
     if (!reference || !pkgKey) {
       res.status(400).json({ error: 'Missing required fields: reference, package' });
@@ -81,7 +100,7 @@ router.post('/verify', async (req: Request, res: Response) => {
 
     const t0 = Date.now();
     const verification = await paystack.verify(reference);
-    console.log(`[verify] paystack.verify took ${Date.now() - t0}ms`);
+    logger.info({ reference, ms: Date.now() - t0 }, 'paystack verify');
 
     if (verification.status !== 'success') {
       res.status(400).json({ error: 'Payment not confirmed', status: verification.status });
@@ -89,10 +108,10 @@ router.post('/verify', async (req: Request, res: Response) => {
     }
 
     // Return cached result if this reference was already processed (prevents duplicate users)
-    const cachedUrl = processedReferences.get(reference);
-    if (cachedUrl) {
-      console.log(`[verify] reference ${reference} already processed, returning cached loginUrl`);
-      res.json({ success: true, loginUrl: cachedUrl });
+    const cached = processedReferences.get(reference);
+    if (cached) {
+      logger.info({ reference }, 'verify cache hit');
+      res.json({ success: true, ...cached });
       return;
     }
 
@@ -100,17 +119,23 @@ router.post('/verify', async (req: Request, res: Response) => {
 
     const t1 = Date.now();
     await mikrotik.createUserWithProfile(username, password, pkg.mikrotik_profile);
-    console.log(`[verify] mikrotik total took ${Date.now() - t1}ms`);
-    console.log(`[verify] entire verify took ${Date.now() - t0}ms`);
+    logger.info({ username, package: pkgKey, mikrotikMs: Date.now() - t1, totalMs: Date.now() - t0 }, 'user created');
 
     const loginUrl = `${process.env.HOTSPOT_LOGIN_URL}?username=${username}&password=${password}`;
 
-    // Cache the result so duplicate calls don't create another user
-    processedReferences.set(reference, loginUrl);
+    const result: ProcessedResult = { loginUrl, username, password, packageName: pkg.name };
 
-    res.json({ success: true, loginUrl });
+    // Cache the result so duplicate calls don't create another user
+    processedReferences.set(reference, result);
+
+    // Send credentials via SMS (fire-and-forget)
+    if (phone) {
+      sendCredentialsSms(phone, username, password, pkg.name).catch(() => {});
+    }
+
+    res.json({ success: true, ...result });
   } catch (err) {
-    console.error('Verify error:', (err as Error).message);
+    logger.error({ err }, 'verify failed');
     res.status(500).json({ error: 'Verification failed — please tap Verify Payment to try again' });
   }
 });

@@ -4,6 +4,7 @@ import * as paystack from '../services/paystack';
 import * as mikrotik from '../services/mikrotik';
 import { generateCredentials } from '../services/credentials';
 import { packages } from './packages';
+import logger from '../logger';
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const pkgKey = metadata?.package as string;
 
       if (!pkgKey || !packages[pkgKey]) {
-        console.error('Webhook: missing or invalid package in metadata', reference);
+        logger.error({ reference }, 'webhook: missing or invalid package in metadata');
         res.sendStatus(200);
         return;
       }
@@ -41,16 +42,15 @@ router.post('/webhook', async (req: Request, res: Response) => {
         const { username, password } = generateCredentials();
         const pkg = packages[pkgKey];
 
-        await mikrotik.createUser(username, password);
-        await mikrotik.assignProfile(username, pkg.mikrotik_profile);
+        await mikrotik.createUserWithProfile(username, password, pkg.mikrotik_profile);
 
-        console.log(`Webhook: created user ${username} for ${pkgKey} (ref: ${reference})`);
+        logger.info({ username, package: pkgKey, reference }, 'webhook: user created');
       }
     }
 
     res.sendStatus(200);
   } catch (err) {
-    console.error('Webhook error:', (err as Error).message);
+    logger.error({ err }, 'webhook error');
     res.sendStatus(500);
   }
 });

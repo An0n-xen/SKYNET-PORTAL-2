@@ -1,5 +1,6 @@
 import axios from 'axios';
 import http from 'http';
+import logger from '../logger';
 
 const MIKROTIK_URL = process.env.MIKROTIK_API_URL!;
 const MIKROTIK_USER = process.env.MIKROTIK_API_USER!;
@@ -24,6 +25,7 @@ export async function createUser(name: string, password: string): Promise<void> 
     name,
     password,
     group: 'default',
+    'shared-users': '1',
   });
 }
 
@@ -41,13 +43,13 @@ export async function createUserWithProfile(
     name,
     password,
     group: 'default',
+    'shared-users': '1',
   });
-  console.log(`[mikrotik] createUser took ${Date.now() - t0}ms`);
+  logger.info({ user: name, ms: Date.now() - t0 }, 'mikrotik createUser');
 
   const t1 = Date.now();
   await api.post('/rest/user-manager/user-profile/add', { user: name, profile });
-  console.log(`[mikrotik] assignProfile took ${Date.now() - t1}ms`);
-  console.log(`[mikrotik] total took ${Date.now() - t0}ms`);
+  logger.info({ user: name, profile, createMs: Date.now() - t1, totalMs: Date.now() - t0 }, 'mikrotik assignProfile');
 }
 
 export async function listUsers(): Promise<unknown[]> {
