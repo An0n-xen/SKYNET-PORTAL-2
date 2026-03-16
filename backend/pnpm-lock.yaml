@@ -26,6 +26,9 @@ importers:
       pino-pretty:
         specifier: ^13.1.3
         version: 13.1.3
+      radclient:
+        specifier: ^1.0.0
+        version: 1.0.0
     devDependencies:
       '@types/express':
         specifier: ^5.0.0
@@ -556,6 +559,13 @@ packages:
 
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
+
+  radclient@1.0.0:
+    resolution: {integrity: sha512-riZrNfHALBG6G0V5VEcr+iHViB6kSe4u8tzeBBs/Beo7Lvrzd4w2lynM1ypFzg1fZwrWJMIsEhCzJ4Tk3pUmAA==}
+
+  radius@1.1.4:
+    resolution: {integrity: sha512-UWuzdF6xf3NpsXFZZmUEkxtEalDXj8hdmMXgbGzn7vOk6zXNsiIY2I6SJ1euHt7PTQuMoz2qDEJB+AfJDJgQYw==}
+    engines: {node: '>=0.8.0'}
 
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
@@ -1157,6 +1167,15 @@ snapshots:
       side-channel: 1.1.0
 
   quick-format-unescaped@4.0.4: {}
+
+  radclient@1.0.0:
+    dependencies:
+      debug: 2.6.9
+      radius: 1.1.4
+    transitivePeerDependencies:
+      - supports-color
+
+  radius@1.1.4: {}
 
   range-parser@1.2.1: {}
 

@@ -416,7 +416,6 @@
         margin: 20px 0;
       }
 
-
       /* ── Success Screen ── */
       .success-screen {
         display: none;
@@ -484,7 +483,9 @@
         font-weight: 500;
         color: var(--accent);
         cursor: pointer;
-        transition: background 0.2s, border-color 0.2s;
+        transition:
+          background 0.2s,
+          border-color 0.2s;
       }
 
       .copy-btn:hover {
@@ -792,15 +793,10 @@
           </select>
         </div>
 
-        <button
-          class="btn btn-primary"
-          id="pay-btn"
-
-          disabled
-        >
-          Pay Now
+        <button class="btn btn-primary" id="pay-btn" disabled>Pay Now</button>
+        <button class="btn btn-outline" id="have-account-btn">
+          Already have an account?
         </button>
-        <button class="btn btn-outline" id="have-account-btn">Already have an account?</button>
       </div>
 
       <!-- OTP Section -->
@@ -838,7 +834,7 @@
       </div>
 
       <!-- Login View -->
-      <div id="login-view" style="display: none;">
+      <div id="login-view" style="display: none">
         <div class="section-heading">Log in to connect</div>
         <div class="form-group">
           <label for="login-username">Username</label>
@@ -846,7 +842,7 @@
         </div>
         <div class="form-group">
           <label for="login-password">Password</label>
-          <input type="text" id="login-password" placeholder="1234" maxlength="4" />
+          <input type="password" id="login-password" placeholder="1234" />
         </div>
         <p class="status" id="login-status"></p>
         <div class="spinner" id="login-spinner">
@@ -855,7 +851,9 @@
           <div class="spinner-dot"></div>
         </div>
         <button class="btn btn-primary" id="manual-login-btn">Connect</button>
-        <button class="btn btn-outline" id="back-to-payment-btn">Back to payment</button>
+        <button class="btn btn-outline" id="back-to-payment-btn">
+          Back to payment
+        </button>
       </div>
 
       <!-- Success Screen -->
@@ -869,7 +867,12 @@
             <div class="credential-label">Username</div>
             <div class="credential-value" id="cred-username"></div>
           </div>
-          <button class="copy-btn" onclick="copyCredential('cred-username', this)">Copy</button>
+          <button
+            class="copy-btn"
+            onclick="copyCredential('cred-username', this)"
+          >
+            Copy
+          </button>
         </div>
 
         <div class="credential-row">
@@ -877,12 +880,19 @@
             <div class="credential-label">Password</div>
             <div class="credential-value" id="cred-password"></div>
           </div>
-          <button class="copy-btn" onclick="copyCredential('cred-password', this)">Copy</button>
+          <button
+            class="copy-btn"
+            onclick="copyCredential('cred-password', this)"
+          >
+            Copy
+          </button>
         </div>
 
         <div class="sms-notice" id="sms-notice"></div>
 
-        <button class="btn btn-primary" id="connect-now-btn">Connect Now</button>
+        <button class="btn btn-primary" id="connect-now-btn">
+          Connect Now
+        </button>
 
         <div class="countdown-text" id="countdown-text"></div>
       </div>
@@ -899,9 +909,11 @@
         <div class="modal-icon">📱</div>
         <div class="modal-title">Check your phone</div>
         <p class="modal-text" id="modal-text">
-          A payment prompt has been sent to your phone. Please approve it to continue.
+          A payment prompt has been sent to your phone. Please approve it to
+          continue.
           <br /><br />
-          If no prompt appears, open your mobile money app and check your approvals.
+          If no prompt appears, open your mobile money app and check your
+          approvals.
         </p>
         <button class="modal-btn" id="modal-ok-btn">OK, I'll check</button>
       </div>
@@ -952,7 +964,11 @@
           });
         });
 
-      const providerNames = { mtn: "MTN Mobile Money", vod: "Vodafone Cash", tgo: "AirtelTigo Money" };
+      const providerNames = {
+        mtn: "MTN Mobile Money",
+        vod: "Vodafone Cash",
+        tgo: "AirtelTigo Money",
+      };
 
       function showVerifyButton() {
         verifySection.classList.add("visible");
@@ -1000,20 +1016,18 @@
       // View switching: payment <-> login
       const paymentForm = document.getElementById("payment-form");
 
-      document.getElementById("have-account-btn").addEventListener("click", () => {
-        switchView(
-          [packagesEl, selectPlanHeading, paymentForm],
-          [loginView]
-        );
-      });
+      document
+        .getElementById("have-account-btn")
+        .addEventListener("click", () => {
+          switchView([packagesEl, selectPlanHeading, paymentForm], [loginView]);
+        });
 
-      document.getElementById("back-to-payment-btn").addEventListener("click", () => {
-        clearLoginState();
-        switchView(
-          [loginView],
-          [packagesEl, selectPlanHeading, paymentForm]
-        );
-      });
+      document
+        .getElementById("back-to-payment-btn")
+        .addEventListener("click", () => {
+          clearLoginState();
+          switchView([loginView], [packagesEl, selectPlanHeading, paymentForm]);
+        });
 
       // Manual login with server-side validation
       const loginStatusEl = document.getElementById("login-status");
@@ -1250,13 +1264,16 @@
         // Populate credentials
         document.getElementById("cred-username").textContent = data.username;
         document.getElementById("cred-password").textContent = data.password;
-        document.getElementById("success-plan").textContent = data.packageName + " Plan";
+        document.getElementById("success-plan").textContent =
+          data.packageName + " Plan";
 
         // SMS notice
         const smsNotice = document.getElementById("sms-notice");
         if (paymentPhone) {
-          const masked = paymentPhone.slice(0, 3) + "****" + paymentPhone.slice(-3);
-          smsNotice.textContent = "Your credentials will also be sent via SMS to " + masked;
+          const masked =
+            paymentPhone.slice(0, 3) + "****" + paymentPhone.slice(-3);
+          smsNotice.textContent =
+            "Your credentials will also be sent via SMS to " + masked;
         } else {
           smsNotice.textContent = "";
         }
@@ -1274,14 +1291,16 @@
         // Countdown
         let seconds = 20;
         const countdownEl = document.getElementById("countdown-text");
-        countdownEl.innerHTML = "Auto-connecting in <strong>" + seconds + "</strong> seconds...";
+        countdownEl.innerHTML =
+          "Auto-connecting in <strong>" + seconds + "</strong> seconds...";
         const countdownTimer = setInterval(() => {
           seconds--;
           if (seconds <= 0) {
             clearInterval(countdownTimer);
             window.location.href = data.loginUrl;
           } else {
-            countdownEl.innerHTML = "Auto-connecting in <strong>" + seconds + "</strong> seconds...";
+            countdownEl.innerHTML =
+              "Auto-connecting in <strong>" + seconds + "</strong> seconds...";
           }
         }, 1000);
       }
