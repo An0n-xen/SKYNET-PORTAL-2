@@ -17,7 +17,7 @@ router.post("/verify", async (req: Request, res: Response) => {
       return;
     }
 
-    const normalized = String(username).trim().toUpperCase();
+    const normalized = String(username).trim();
     const pin = String(password).trim();
 
     // Reject usernames with @ — breaks MikroTik RADIUS and REST API
