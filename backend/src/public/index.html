@@ -951,13 +951,13 @@
           } else {
             hideSpinner();
             statusEl.textContent =
-              data.error || "Verification failed — please try again";
+              data.error || "Verification failed — tap Verify Payment to retry";
             statusEl.className = "status error";
           }
         } catch (err) {
           hideSpinner();
           statusEl.textContent =
-            "Connection error — please try again";
+            "Connection error — tap Verify Payment to retry";
           statusEl.className = "status error";
         } finally {
           verifying = false;

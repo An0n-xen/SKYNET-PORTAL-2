@@ -111,7 +111,7 @@ router.post('/verify', async (req: Request, res: Response) => {
     res.json({ success: true, loginUrl });
   } catch (err) {
     console.error('Verify error:', (err as Error).message);
-    res.status(500).json({ error: 'Verification failed' });
+    res.status(500).json({ error: 'Verification failed — please tap Verify Payment to try again' });
   }
 });
 
