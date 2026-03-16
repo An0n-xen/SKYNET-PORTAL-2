@@ -848,6 +848,12 @@
           <label for="login-password">Password</label>
           <input type="text" id="login-password" placeholder="1234" maxlength="4" />
         </div>
+        <p class="status" id="login-status"></p>
+        <div class="spinner" id="login-spinner">
+          <div class="spinner-dot"></div>
+          <div class="spinner-dot"></div>
+          <div class="spinner-dot"></div>
+        </div>
         <button class="btn btn-primary" id="manual-login-btn">Connect</button>
         <button class="btn btn-outline" id="back-to-payment-btn">Back to payment</button>
       </div>
@@ -1002,22 +1008,66 @@
       });
 
       document.getElementById("back-to-payment-btn").addEventListener("click", () => {
+        clearLoginState();
         switchView(
           [loginView],
           [packagesEl, selectPlanHeading, paymentForm]
         );
       });
 
-      // Manual login
-      document.getElementById("manual-login-btn").addEventListener("click", () => {
+      // Manual login with server-side validation
+      const loginStatusEl = document.getElementById("login-status");
+      const loginSpinner = document.getElementById("login-spinner");
+      const manualLoginBtn = document.getElementById("manual-login-btn");
+
+      function clearLoginState() {
+        loginStatusEl.textContent = "";
+        loginStatusEl.className = "status";
+        loginSpinner.classList.remove("visible");
+        manualLoginBtn.disabled = false;
+      }
+
+      manualLoginBtn.addEventListener("click", async () => {
         const username = document.getElementById("login-username").value.trim();
         const password = document.getElementById("login-password").value.trim();
-        if (!username || !password) return;
-        window.location.href =
-          "http://192.168.100.1/login?username=" +
-          encodeURIComponent(username) +
-          "&password=" +
-          encodeURIComponent(password);
+
+        if (!username || !password) {
+          loginStatusEl.textContent = "Enter your username and password";
+          loginStatusEl.className = "status error";
+          return;
+        }
+
+        manualLoginBtn.disabled = true;
+        loginStatusEl.textContent = "Verifying credentials...";
+        loginStatusEl.className = "status";
+        loginSpinner.classList.add("visible");
+
+        try {
+          const res = await fetch("/api/auth/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            loginSpinner.classList.remove("visible");
+            loginStatusEl.textContent = data.error || "Verification failed";
+            loginStatusEl.className = "status error";
+            manualLoginBtn.disabled = false;
+            return;
+          }
+
+          loginStatusEl.textContent = "Credentials verified! Connecting...";
+          loginStatusEl.className = "status success";
+          loginSpinner.classList.remove("visible");
+          window.location.href = data.loginUrl;
+        } catch (err) {
+          loginSpinner.classList.remove("visible");
+          loginStatusEl.textContent = "Connection error — try again";
+          loginStatusEl.className = "status error";
+          manualLoginBtn.disabled = false;
+        }
       });
 
       // Pay
@@ -1163,6 +1213,7 @@
           loginView.style.display = "none";
           statusEl.textContent = "";
           statusEl.className = "status";
+          clearLoginState();
           payBtn.disabled = !selectedPackage;
           verifying = false;
           if (pollInterval) {

@@ -60,3 +60,11 @@ export async function listUsers(): Promise<unknown[]> {
 export async function removeUser(id: string): Promise<void> {
   await api.post('/rest/user-manager/user/remove', { '.id': id });
 }
+
+export async function findUser(username: string): Promise<{ name: string; password: string } | null> {
+  const { data } = await api.post('/rest/user-manager/user/print', {
+    '.query': ['name', username],
+  });
+  const users = Array.isArray(data) ? data : [];
+  return users.length > 0 ? users[0] : null;
+}

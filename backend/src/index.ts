@@ -8,6 +8,7 @@ import pagesRouter from './routes/pages';
 import packagesRouter from './routes/packages';
 import paymentRouter from './routes/payment';
 import webhookRouter from './routes/webhook';
+import authRouter from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,11 +27,22 @@ const paymentLimiter = rateLimit({
 
 app.use('/api/payment', paymentLimiter);
 
+// Auth rate limiter — stricter (4-digit PINs are brute-forceable)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts — please try again later' },
+});
+app.use('/api/auth', authLimiter);
+
 // Routes
 app.use('/', pagesRouter);
 app.use('/api/packages', packagesRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/paystack', webhookRouter);
+app.use('/api/auth', authRouter);
 
 app.listen(PORT, () => {
   logger.info({ port: PORT }, 'SKYNET Portal running');
