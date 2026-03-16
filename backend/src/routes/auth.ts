@@ -17,8 +17,14 @@ router.post("/verify", async (req: Request, res: Response) => {
       return;
     }
 
-    const normalized = String(username).trim();
+    const normalized = String(username).trim().toUpperCase();
     const pin = String(password).trim();
+
+    // Reject usernames with @ — breaks MikroTik RADIUS and REST API
+    if (normalized.includes("@")) {
+      res.status(400).json({ error: "Invalid username format" });
+      return;
+    }
 
     logger.info({ username: normalized }, "auth verify attempt");
 
@@ -37,7 +43,13 @@ router.post("/verify", async (req: Request, res: Response) => {
     res.json({ success: true, loginUrl });
   } catch (err: any) {
     logger.error({ err: err.message }, "auth verify error");
-    res.status(500).json({ error: "Could not verify credentials — try again" });
+    const isTimeout =
+      err.message?.includes("retries exceeded") ||
+      err.message?.includes("timeout");
+    const msg = isTimeout
+      ? "Verification timed out — please try again"
+      : "Could not verify credentials — try again";
+    res.status(isTimeout ? 504 : 500).json({ error: msg });
   }
 });
 
