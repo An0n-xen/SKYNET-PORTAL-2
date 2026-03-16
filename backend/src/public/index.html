@@ -97,6 +97,36 @@
         }
       }
 
+      @keyframes fadeSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeSlideOut {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+      }
+
+      .view-enter {
+        animation: fadeSlideIn 0.3s ease-out forwards;
+      }
+
+      .view-exit {
+        animation: fadeSlideOut 0.2s ease-in forwards;
+      }
+
       /* ── Header ── */
       .header {
         text-align: center;
@@ -385,6 +415,7 @@
         background: var(--border);
         margin: 20px 0;
       }
+
 
       /* ── Success Screen ── */
       .success-screen {
@@ -769,6 +800,7 @@
         >
           Pay Now
         </button>
+        <button class="btn btn-outline" id="have-account-btn">Already have an account?</button>
       </div>
 
       <!-- OTP Section -->
@@ -803,6 +835,21 @@
       <!-- Status -->
       <div class="status-area">
         <p class="status" id="status"></p>
+      </div>
+
+      <!-- Login View -->
+      <div id="login-view" style="display: none;">
+        <div class="section-heading">Log in to connect</div>
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" placeholder="SKY-XXXX" />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="text" id="login-password" placeholder="1234" maxlength="4" />
+        </div>
+        <button class="btn btn-primary" id="manual-login-btn">Connect</button>
+        <button class="btn btn-outline" id="back-to-payment-btn">Back to payment</button>
       </div>
 
       <!-- Success Screen -->
@@ -872,6 +919,8 @@
       const approvalModal = document.getElementById("approval-modal");
       const modalText = document.getElementById("modal-text");
       const modalOkBtn = document.getElementById("modal-ok-btn");
+      const loginView = document.getElementById("login-view");
+      const selectPlanHeading = document.querySelector(".section-heading");
 
       // Load packages
       fetch("/api/packages")
@@ -921,6 +970,54 @@
 
       modalOkBtn.addEventListener("click", () => {
         approvalModal.classList.remove("visible");
+      });
+
+      // Animate view transition: fade out elements, then fade in others
+      function switchView(hideEls, showEls) {
+        hideEls.forEach((el) => {
+          el.classList.remove("view-enter");
+          el.classList.add("view-exit");
+        });
+
+        setTimeout(() => {
+          hideEls.forEach((el) => {
+            el.style.display = "none";
+            el.classList.remove("view-exit");
+          });
+          showEls.forEach((el) => {
+            el.style.display = "";
+            el.classList.add("view-enter");
+          });
+        }, 200);
+      }
+
+      // View switching: payment <-> login
+      const paymentForm = document.getElementById("payment-form");
+
+      document.getElementById("have-account-btn").addEventListener("click", () => {
+        switchView(
+          [packagesEl, selectPlanHeading, paymentForm],
+          [loginView]
+        );
+      });
+
+      document.getElementById("back-to-payment-btn").addEventListener("click", () => {
+        switchView(
+          [loginView],
+          [packagesEl, selectPlanHeading, paymentForm]
+        );
+      });
+
+      // Manual login
+      document.getElementById("manual-login-btn").addEventListener("click", () => {
+        const username = document.getElementById("login-username").value.trim();
+        const password = document.getElementById("login-password").value.trim();
+        if (!username || !password) return;
+        window.location.href =
+          "http://192.168.100.1/login?username=" +
+          encodeURIComponent(username) +
+          "&password=" +
+          encodeURIComponent(password);
       });
 
       // Pay
@@ -1063,6 +1160,7 @@
           document.getElementById("payment-form").style.display = "";
           document.getElementById("packages").style.display = "";
           document.querySelector(".section-heading").style.display = "";
+          loginView.style.display = "none";
           statusEl.textContent = "";
           statusEl.className = "status";
           payBtn.disabled = !selectedPackage;
@@ -1095,6 +1193,7 @@
         document.querySelector(".section-heading").style.display = "none";
         otpSection.classList.remove("visible");
         verifySection.classList.remove("visible");
+        loginView.style.display = "none";
         statusEl.textContent = "";
 
         // Populate credentials
@@ -1106,7 +1205,7 @@
         const smsNotice = document.getElementById("sms-notice");
         if (paymentPhone) {
           const masked = paymentPhone.slice(0, 3) + "****" + paymentPhone.slice(-3);
-          smsNotice.textContent = "Credentials sent via SMS to " + masked;
+          smsNotice.textContent = "Your credentials will also be sent via SMS to " + masked;
         } else {
           smsNotice.textContent = "";
         }
@@ -1122,7 +1221,7 @@
         });
 
         // Countdown
-        let seconds = 5;
+        let seconds = 20;
         const countdownEl = document.getElementById("countdown-text");
         countdownEl.innerHTML = "Auto-connecting in <strong>" + seconds + "</strong> seconds...";
         const countdownTimer = setInterval(() => {
