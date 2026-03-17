@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
-import rateLimit from 'express-rate-limit';
 import logger from './logger';
 
 import pagesRouter from './routes/pages';
@@ -15,27 +14,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'src', 'public')));
-
-// Rate limiting for payment endpoints
-const paymentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 20, // max 20 payment attempts per IP per window
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: { error: 'Too many payment attempts — please try again later' },
-});
-
-app.use('/api/payment', paymentLimiter);
-
-// Auth rate limiter — stricter (4-digit PINs are brute-forceable)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  message: { error: 'Too many login attempts — please try again later' },
-});
-app.use('/api/auth', authLimiter);
 
 // Routes
 app.use('/', pagesRouter);

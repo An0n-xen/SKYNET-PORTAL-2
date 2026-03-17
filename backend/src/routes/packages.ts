@@ -11,15 +11,15 @@ export interface Package {
 export const packages: Record<string, Package> = {
   daily: {
     name: "Daily",
-    price: 100,
-    display_price: "GHS 1.00",
+    price: 650,
+    display_price: "GHS 6.50",
     validity: "24 hours",
     mikrotik_profile: "daily",
   },
   monthly: {
     name: "Monthly",
-    price: 200,
-    display_price: "GHS 2.00",
+    price: 80_000,
+    display_price: "GHS 80.00",
     validity: "30 days",
     mikrotik_profile: "monthly",
   },
