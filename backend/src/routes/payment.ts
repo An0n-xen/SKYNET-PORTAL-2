@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import * as paystack from '../services/paystack';
 import * as mikrotik from '../services/mikrotik';
+import { isValidMac, normalizeMac } from '../services/mikrotik';
 import { generateCredentials } from '../services/credentials';
 import { sendCredentialsSms } from '../services/sms';
 import { packages } from './packages';
@@ -85,7 +86,7 @@ router.post('/submit-otp', async (req: Request, res: Response) => {
 // POST /api/payment/verify
 router.post('/verify', async (req: Request, res: Response) => {
   try {
-    const { reference, package: pkgKey, phone } = req.body;
+    const { reference, package: pkgKey, phone, mac } = req.body;
 
     if (!reference || !pkgKey) {
       res.status(400).json({ error: 'Missing required fields: reference, package' });
@@ -117,9 +118,10 @@ router.post('/verify', async (req: Request, res: Response) => {
 
     const { username, password } = generateCredentials();
 
+    const callerId = mac && isValidMac(mac) ? normalizeMac(mac) : undefined;
     const t1 = Date.now();
-    await mikrotik.createUserWithProfile(username, password, pkg.mikrotik_profile);
-    logger.info({ username, package: pkgKey, mikrotikMs: Date.now() - t1, totalMs: Date.now() - t0 }, 'user created');
+    await mikrotik.createUserWithProfile(username, password, pkg.mikrotik_profile, callerId);
+    logger.info({ username, package: pkgKey, callerId: callerId || "none", mikrotikMs: Date.now() - t1, totalMs: Date.now() - t0 }, 'user created');
 
     const loginUrl = `${process.env.HOTSPOT_LOGIN_URL}?username=${username}&password=${password}`;
 

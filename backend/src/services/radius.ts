@@ -11,28 +11,58 @@ export async function verifyCredentials(
   username: string,
   password: string,
 ): Promise<boolean> {
+  logger.debug(
+    { username, passwordLength: password.length, radiusHost: RADIUS_HOST, radiusPort: RADIUS_PORT },
+    "RADIUS verifyCredentials called",
+  );
+
   return new Promise((resolve, reject) => {
+    const identifier = Math.floor(Math.random() * 256);
     const packet = {
       code: "Access-Request",
       secret: RADIUS_SECRET,
-      identifier: Math.floor(Math.random() * 256),
+      identifier,
       attributes: [
         ["User-Name", username],
         ["User-Password", password],
       ] as [string, string][],
     };
 
+    logger.debug(
+      { username, identifier, host: RADIUS_HOST, port: RADIUS_PORT, retries: 8, timeout: 5000 },
+      "RADIUS sending Access-Request",
+    );
+
+    const startTime = Date.now();
+
     radclient(
       packet,
       { host: RADIUS_HOST, port: RADIUS_PORT, timeout: 5000, retries: 8 },
       (err, response) => {
+        const elapsed = Date.now() - startTime;
+
         if (err) {
-          logger.error({ err: err.message, username }, "RADIUS auth error");
+          logger.error(
+            { err: err.message, username, elapsed, identifier },
+            "RADIUS auth error — possible causes: MikroTik unreachable, secret mismatch, timeout",
+          );
           reject(err);
           return;
         }
-        logger.info({ username, code: response.code }, "RADIUS auth response");
-        resolve(response.code === "Access-Accept");
+
+        const accepted = response.code === "Access-Accept";
+        logger.info(
+          {
+            username,
+            code: response.code,
+            accepted,
+            elapsed,
+            identifier,
+            attributes: response.attributes,
+          },
+          `RADIUS auth response — ${accepted ? "ACCEPTED" : "REJECTED (wrong password, expired profile, or shared-users exceeded)"}`,
+        );
+        resolve(accepted);
       },
     );
   });
