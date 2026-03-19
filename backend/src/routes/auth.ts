@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { verifyCredentials } from "../services/radius";
+import { findUser } from "../services/mikrotik";
 import logger from "../logger";
 
 const router = Router();
@@ -20,7 +20,7 @@ router.post("/verify", async (req: Request, res: Response) => {
     const normalized = String(username).trim();
     const pin = String(password).trim();
 
-    // Reject usernames with @ — breaks MikroTik RADIUS and REST API
+    // Reject usernames with @ — breaks MikroTik REST API
     if (normalized.includes("@")) {
       res.status(400).json({ error: "Invalid username format" });
       return;
@@ -28,9 +28,9 @@ router.post("/verify", async (req: Request, res: Response) => {
 
     logger.info({ username: normalized }, "auth verify attempt");
 
-    // RADIUS verifies both username existence and password in one call
-    const valid = await verifyCredentials(normalized, pin);
-    if (!valid) {
+    // Verify credentials via MikroTik REST API (TCP — works through WireGuard)
+    const user = await findUser(normalized);
+    if (!user || user.password !== pin) {
       res
         .status(401)
         .json({ error: "Invalid username or password / Account Expired" });
@@ -43,13 +43,7 @@ router.post("/verify", async (req: Request, res: Response) => {
     res.json({ success: true, loginUrl });
   } catch (err: any) {
     logger.error({ err: err.message }, "auth verify error");
-    const isTimeout =
-      err.message?.includes("retries exceeded") ||
-      err.message?.includes("timeout");
-    const msg = isTimeout
-      ? "Verification timed out — please try again"
-      : "Could not verify credentials — try again";
-    res.status(isTimeout ? 504 : 500).json({ error: msg });
+    res.status(500).json({ error: "Could not verify credentials — try again" });
   }
 });
 

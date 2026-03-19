@@ -24,7 +24,7 @@ export async function verifyCredentials(
 
     radclient(
       packet,
-      { host: RADIUS_HOST, port: RADIUS_PORT, timeout: 5000, retries: 8 },
+      { host: RADIUS_HOST, port: RADIUS_PORT, timeout: 5000, retries: 3 },
       (err, response) => {
         if (err) {
           logger.error({ err: err.message, username }, "RADIUS auth error");
