@@ -45,11 +45,13 @@ export async function createUserWithProfile(
   profile: string,
 ): Promise<void> {
   const t0 = Date.now();
+  const mikrotikGroup = profile === "monthly" ? "plan-monthly" : "plan-daily";
   await api.post("/rest/user-manager/user/add", {
     name,
     password,
     group: "default",
     "shared-users": "1",
+    attributes: `Mikrotik-Group:${mikrotikGroup}`,
   });
   logger.info({ user: name, ms: Date.now() - t0 }, "mikrotik createUser");
 
