@@ -947,6 +947,13 @@
           Object.entries(pkgs).forEach(([key, pkg]) => {
             const card = document.createElement("div");
             card.className = "package-card";
+
+            const isDisabled = pkg.name === "Semester";
+            if (isDisabled) {
+              card.style.opacity = "0.5";
+              card.style.cursor = "not-allowed";
+              card.title = "This package is currently unavailable";
+            }
             card.innerHTML = `
             <h3>${pkg.name}</h3>
             <div class="price">${pkg.display_price}</div>

@@ -45,7 +45,12 @@ export async function createUserWithProfile(
   profile: string,
 ): Promise<void> {
   const t0 = Date.now();
-  const mikrotikGroup = profile === "monthly" ? "plan-monthly" : "plan-daily";
+  const planMap = {
+    monthly: "plan-monthly",
+    daily: "plan-daily",
+    semester: "plan-semester",
+  };
+  const mikrotikGroup = planMap[profile as keyof typeof planMap] || "plan-daily";
   await api.post("/rest/user-manager/user/add", {
     name,
     password,

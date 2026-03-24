@@ -23,6 +23,13 @@ export const packages: Record<string, Package> = {
     validity: "30 days",
     mikrotik_profile: "monthly",
   },
+  semester: {
+    name: "Semester",
+    price: 300_000,
+    display_price: "GHS 300.00",
+    validity: "120 days",
+    mikrotik_profile: "semester",
+  },
 };
 
 const router = Router();
