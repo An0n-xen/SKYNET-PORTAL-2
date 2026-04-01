@@ -26,6 +26,7 @@ interface ChargeResult {
   status: string;
   reference: string;
   display_text?: string;
+  message?: string;
 }
 
 export async function charge({ amount, phone, provider }: ChargeParams): Promise<ChargeResult> {
@@ -42,6 +43,7 @@ export async function charge({ amount, phone, provider }: ChargeParams): Promise
     status: data.data.status,
     reference: data.data.reference,
     display_text: data.data.display_text,
+    message: data.message,
   };
 }
 

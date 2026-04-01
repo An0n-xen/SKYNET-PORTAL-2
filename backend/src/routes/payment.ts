@@ -53,6 +53,8 @@ router.post('/charge', async (req: Request, res: Response) => {
       provider,
     });
 
+    logger.info({ package: pkgKey, amount: pkg.price, status: result.status, reference: result.reference, message: result.message }, 'paystack charge response');
+
     res.json(result);
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {

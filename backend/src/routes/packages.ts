@@ -18,7 +18,7 @@ export const packages: Record<string, Package> = {
   },
   monthly: {
     name: "Monthly",
-    price: 80_000,
+    price: 80000,
     display_price: "GHS 80.00",
     validity: "30 days",
     mikrotik_profile: "monthly",
