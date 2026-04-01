@@ -28,7 +28,7 @@ export async function createUser(
     name,
     password,
     group: "default",
-    "shared-users": "1",
+    "shared-users": "2",
   });
 }
 
