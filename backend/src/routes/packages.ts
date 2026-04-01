@@ -18,14 +18,14 @@ export const packages: Record<string, Package> = {
   },
   monthly: {
     name: "Monthly",
-    price: 80000,
+    price: 8_000,
     display_price: "GHS 80.00",
     validity: "30 days",
     mikrotik_profile: "monthly",
   },
   semester: {
     name: "Semester",
-    price: 300_000,
+    price: 30_000,
     display_price: "GHS 300.00",
     validity: "120 days",
     mikrotik_profile: "semester",

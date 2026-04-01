@@ -102,7 +102,7 @@ router.post('/verify', async (req: Request, res: Response) => {
 
     const t0 = Date.now();
     const verification = await paystack.verify(reference);
-    logger.info({ reference, ms: Date.now() - t0 }, 'paystack verify');
+    logger.info({ reference, status: verification.status, ms: Date.now() - t0 }, 'paystack verify');
 
     if (verification.status !== 'success') {
       res.status(400).json({ error: 'Payment not confirmed', status: verification.status });
