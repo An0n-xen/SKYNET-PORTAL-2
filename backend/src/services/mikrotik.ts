@@ -55,7 +55,7 @@ export async function createUserWithProfile(
     name,
     password,
     group: "default",
-    "shared-users": "1",
+    "shared-users": "2",
     attributes: `Mikrotik-Group:${mikrotikGroup}`,
   });
   logger.info({ user: name, ms: Date.now() - t0 }, "mikrotik createUser");
