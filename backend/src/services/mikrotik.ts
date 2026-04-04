@@ -51,12 +51,15 @@ export async function createUserWithProfile(
     semester: "plan-semester",
   };
   const mikrotikGroup = planMap[profile as keyof typeof planMap] || "plan-daily";
+  const now = new Date();
+  const createdAt = now.toUTCString().replace(/GMT$/, "UTC");
   await api.post("/rest/user-manager/user/add", {
     name,
     password,
     group: "default",
     "shared-users": "2",
     attributes: `Mikrotik-Group:${mikrotikGroup}`,
+    comment: `created:${createdAt}`,
   });
   logger.info({ user: name, ms: Date.now() - t0 }, "mikrotik createUser");
 
