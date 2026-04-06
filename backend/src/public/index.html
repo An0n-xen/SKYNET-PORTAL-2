@@ -1330,15 +1330,21 @@
         document.getElementById("success-plan").textContent =
           data.packageName + " Plan";
 
-        // SMS notice
+        // SMS notice — show honest status based on server response
         const smsNotice = document.getElementById("sms-notice");
         if (paymentPhone) {
           const masked =
             paymentPhone.slice(0, 3) + "****" + paymentPhone.slice(-3);
-          smsNotice.textContent =
-            "Your credentials will also be sent via SMS to " + masked;
+          if (data.smsSent) {
+            smsNotice.textContent =
+              "Credentials sent via SMS to " + masked;
+          } else {
+            smsNotice.textContent =
+              "SMS sending to " + masked + ". Save the credentials above just in case.";
+          }
         } else {
-          smsNotice.textContent = "";
+          smsNotice.textContent =
+            "Save your credentials above for reconnecting.";
         }
 
         // Show success screen

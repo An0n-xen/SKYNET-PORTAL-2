@@ -30,10 +30,10 @@ export async function sendCredentialsSms(
   username: string,
   password: string,
   packageName: string,
-): Promise<void> {
+): Promise<boolean> {
   if (!MNOTIFY_API_KEY) {
     logger.warn('MNOTIFY_API_KEY not set, skipping SMS');
-    return;
+    return false;
   }
 
   const message =
@@ -47,7 +47,7 @@ export async function sendCredentialsSms(
     try {
       await trySend(phone, message);
       logger.info({ phone, attempt }, 'SMS sent');
-      return;
+      return true;
     } catch (err) {
       logger.warn({ phone, attempt, err }, 'SMS attempt failed');
       if (attempt < MAX_ATTEMPTS) {
@@ -57,4 +57,5 @@ export async function sendCredentialsSms(
   }
 
   logger.error({ phone }, `SMS failed after ${MAX_ATTEMPTS} attempts`);
+  return false;
 }

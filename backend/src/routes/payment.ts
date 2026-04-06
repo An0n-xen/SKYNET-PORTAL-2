@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import * as paystack from '../services/paystack';
-import * as mikrotik from '../services/mikrotik';
+import { createUserWithProfileRetry } from '../services/mikrotik-retry';
 import { generateCredentials } from '../services/credentials';
 import { sendCredentialsSms } from '../services/sms';
+import { getPayment, insertPayment, markSmsSent } from '../services/database';
 import { packages } from './packages';
 import logger from '../logger';
 
@@ -15,15 +16,6 @@ function validatePhone(phone: string): string | null {
   if (/^0[235]\d{8}$/.test(cleaned)) return cleaned;
   return null;
 }
-
-// Guard against duplicate user creation per payment reference
-interface ProcessedResult {
-  loginUrl: string;
-  username: string;
-  password: string;
-  packageName: string;
-}
-const processedReferences = new Map<string, ProcessedResult>();
 
 // POST /api/payment/charge
 router.post('/charge', async (req: Request, res: Response) => {
@@ -51,6 +43,7 @@ router.post('/charge', async (req: Request, res: Response) => {
       amount: pkg.price,
       phone: validPhone,
       provider,
+      packageKey: pkgKey,
     });
 
     logger.info({ package: pkgKey, amount: pkg.price, status: result.status, reference: result.reference, message: result.message }, 'paystack charge response');
@@ -109,33 +102,66 @@ router.post('/verify', async (req: Request, res: Response) => {
       return;
     }
 
-    // Return cached result if this reference was already processed (prevents duplicate users)
-    const cached = processedReferences.get(reference);
-    if (cached) {
-      logger.info({ reference }, 'verify cache hit');
-      res.json({ success: true, ...cached });
+    // Check SQLite for existing record (handles retries, restarts, dedup)
+    let existing = getPayment(reference);
+
+    if (existing?.profile_assigned) {
+      logger.info({ reference }, 'verify: returning cached credentials');
+      res.json({
+        success: true,
+        loginUrl: existing.login_url,
+        username: existing.username,
+        password: existing.password,
+        packageName: pkg.name,
+        smsSent: existing.sms_sent === 1,
+      });
       return;
     }
 
-    const { username, password } = generateCredentials();
+    let username: string;
+    let password: string;
+    let loginUrl: string;
 
-    const t1 = Date.now();
-    await mikrotik.createUserWithProfile(username, password, pkg.mikrotik_profile);
-    logger.info({ username, package: pkgKey, mikrotikMs: Date.now() - t1, totalMs: Date.now() - t0 }, 'user created');
+    if (existing) {
+      // Partial completion — reuse same credentials
+      username = existing.username;
+      password = existing.password;
+      loginUrl = existing.login_url;
+    } else {
+      // Fresh payment — generate new credentials
+      const creds = generateCredentials();
+      username = creds.username;
+      password = creds.password;
+      loginUrl = `${process.env.HOTSPOT_LOGIN_URL}?username=${username}&password=${password}`;
 
-    const loginUrl = `${process.env.HOTSPOT_LOGIN_URL}?username=${username}&password=${password}`;
-
-    const result: ProcessedResult = { loginUrl, username, password, packageName: pkg.name };
-
-    // Cache the result so duplicate calls don't create another user
-    processedReferences.set(reference, result);
-
-    // Send credentials via SMS (fire-and-forget)
-    if (phone) {
-      sendCredentialsSms(phone, username, password, pkg.name).catch(() => {});
+      insertPayment({
+        reference,
+        package_key: pkgKey,
+        phone: phone || null,
+        username,
+        password,
+        login_url: loginUrl,
+      });
     }
 
-    res.json({ success: true, ...result });
+    // Create MikroTik user with retries (checks MikroTik before creating to prevent duplicates)
+    await createUserWithProfileRetry(username, password, pkg.mikrotik_profile, reference);
+
+    logger.info({ username, package: pkgKey, totalMs: Date.now() - t0 }, 'user created');
+
+    // Send SMS (fire-and-forget, but track success)
+    let smsSent = false;
+    if (phone && !existing?.sms_sent) {
+      sendCredentialsSms(phone, username, password, pkg.name)
+        .then(sent => {
+          if (sent) markSmsSent(reference);
+        })
+        .catch(() => {});
+    } else if (existing?.sms_sent) {
+      smsSent = true;
+    }
+
+    res.json({ success: true, loginUrl, username, password, packageName: pkg.name, smsSent });
   } catch (err) {
     logger.error({ err }, 'verify failed');
     res.status(500).json({ error: 'Verification failed — please tap Verify Payment to try again' });

@@ -20,6 +20,7 @@ interface ChargeParams {
   amount: number;
   phone: string;
   provider: 'mtn' | 'vod' | 'tgo';
+  packageKey: string;
 }
 
 interface ChargeResult {
@@ -29,7 +30,7 @@ interface ChargeResult {
   message?: string;
 }
 
-export async function charge({ amount, phone, provider }: ChargeParams): Promise<ChargeResult> {
+export async function charge({ amount, phone, provider, packageKey }: ChargeParams): Promise<ChargeResult> {
   const email = `user${Date.now()}@skynet-wifi.com`;
 
   const { data } = await api.post('/charge', {
@@ -37,6 +38,7 @@ export async function charge({ amount, phone, provider }: ChargeParams): Promise
     amount,
     currency: 'GHS',
     mobile_money: { phone, provider },
+    metadata: { package: packageKey, phone },
   });
 
   return {

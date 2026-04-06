@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import logger from './logger';
+import { initDatabase } from './services/database';
 
 import pagesRouter from './routes/pages';
 import packagesRouter from './routes/packages';
@@ -21,6 +22,8 @@ app.use('/api/packages', packagesRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/paystack', webhookRouter);
 app.use('/api/auth', authRouter);
+
+initDatabase();
 
 app.listen(PORT, () => {
   logger.info({ port: PORT }, 'SKYNET Portal running');

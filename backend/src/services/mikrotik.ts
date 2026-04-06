@@ -39,12 +39,11 @@ export async function assignProfile(
   await api.post("/rest/user-manager/user-profile/add", { user, profile });
 }
 
-export async function createUserWithProfile(
+export async function createUserDetailed(
   name: string,
   password: string,
   profile: string,
 ): Promise<void> {
-  const t0 = Date.now();
   const planMap = {
     monthly: "plan-monthly",
     daily: "plan-daily",
@@ -61,22 +60,18 @@ export async function createUserWithProfile(
     attributes: `Mikrotik-Group:${mikrotikGroup}`,
     comment: `created:${createdAt}`,
   });
-  logger.info({ user: name, ms: Date.now() - t0 }, "mikrotik createUser");
+  logger.info({ user: name }, "mikrotik createUser");
+}
 
-  const t1 = Date.now();
-  await api.post("/rest/user-manager/user-profile/add", {
-    user: name,
-    profile,
-  });
-  logger.info(
-    {
-      user: name,
-      profile,
-      createMs: Date.now() - t1,
-      totalMs: Date.now() - t0,
-    },
-    "mikrotik assignProfile",
-  );
+export async function createUserWithProfile(
+  name: string,
+  password: string,
+  profile: string,
+): Promise<void> {
+  const t0 = Date.now();
+  await createUserDetailed(name, password, profile);
+  await assignProfile(name, profile);
+  logger.info({ user: name, profile, totalMs: Date.now() - t0 }, "mikrotik createUserWithProfile");
 }
 
 export async function listUsers(): Promise<unknown[]> {
